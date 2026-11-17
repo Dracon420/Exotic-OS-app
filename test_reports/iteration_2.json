@@ -1,0 +1,51 @@
+{
+  "summary": "Iteration 2 testing of 5 new features + Google OAuth. Backend: 22/23 pytest passing (96%). Fixed one critical frontend bug (missing import). Verified species presets (all 5), payments tier list, Stripe checkout creation, Google OAuth invalid-session 401, sensor ingest with node_token (real readings switch source to 'node'), enclosure CRUD, delete cascades sensor_readings, AI chat. Frontend: all new flows verified after fix — Add Enclosure modal with 5 species presets, NodeTokenCard with copy, LIVE NODE/SIMULATED badge, delete + redirect, checkout success/cancel pages, pricing CTAs, Google buttons on /login and /signup.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/payments/status/{session_id}", "issue": "Returns 500 (CheckoutError: 'No such checkout.session') when Stripe-side session is not yet visible or invalid. Endpoint should catch CheckoutError and return a structured 4xx (e.g. 404/410) so the frontend /checkout/success polling can render a friendly state instead of breaking. Real users polling immediately after a fresh checkout will hit this race window.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Login.jsx", "issue": "MISSING IMPORT for GoogleSignIn — file used <GoogleSignIn /> without importing it, causing the entire /login route to crash with a React error boundary fallback. Fixed by adding 'import GoogleSignIn from \"@/components/auth/GoogleSignIn\"' (Signup.jsx already had it).", "selector": "/login route", "priority": "CRITICAL (now fixed by tester)"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Enclosure Detail charts", "issues": ["Console warning: 'The width(-1) and height(-1) of chart should be greater than 0' from recharts ResponsiveContainer — chart still renders but the parent container briefly has 0 dimensions on mount. Add minHeight to the chart wrapper to silence."]},
+      {"screen": "various pages", "issues": ["A few 404s on resource loads observed in console while navigating between landing/dashboard — non-blocking, probably an unused image asset. Worth a quick audit."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_v2.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Wrap StripeCheckout.get_checkout_status() in try/except CheckoutError inside /api/payments/status/{session_id} and return 404 (or keep tx 'pending') instead of bubbling 500.",
+    "Verify the Login.jsx import fix is acceptable and keep it (already applied by tester).",
+    "(Minor) Add minHeight to the recharts ResponsiveContainer wrapper to silence the width(-1)/height(-1) warning.",
+    "(Minor) Investigate 404 resource warnings observed during page navigation."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 1024 lines — exceeds the 700-line guideline. Recommend splitting into routers/auth.py, routers/enclosures.py, routers/payments.py, routers/chat.py, services/ingest.py for maintainability.",
+    "/api/payments/status lacks try/except around the Stripe SDK call — see HIGH-priority backend bug above.",
+    "Google session endpoint correctly raises 401 on bad session (verified). No URL hardcoding, builds redirect from frontend origin per playbook — good.",
+    "Frontend AppRoutes detects location.hash session_id synchronously before rendering routes — correct per Emergent auth playbook.",
+    "node_token is generated via secrets.token_urlsafe(24) — strong entropy, good.",
+    "Enclosure delete correctly cascades sensor_readings via separate delete_many — verified.",
+    "Stripe amounts are server-defined in STRIPE_TIERS — frontend cannot tamper with prices, good.",
+    "CORS still uses allow_credentials=True with allow_origins='*' — only safe today because auth uses Bearer tokens; flag if cookie auth is ever added.",
+    "AI chat retry: server wraps send_message in try/except and retries once on exception — verified working (test_chat_basic passes consistently)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_backend_v2.py (new — 23 tests covering all new features + regression)",
+    "/app/frontend/src/pages/Login.jsx (added missing GoogleSignIn import — was blocking entire /login route)"
+  ],
+  "success_rate": {"backend": "95.6% (22/23)", "frontend": "100% of flows after Login.jsx import fix"},
+  "test_credentials": "Verified admin admin@example.com / <ADMIN_PASSWORD> works. Fresh /api/auth/register also auto-seeds 4 demo enclosures verified.",
+  "seed_data_creation": "Fresh users registered with test_<uuid>@example.com / testpass123. Created TEST 'Pebbles' Leopard Gecko enclosure (deleted in same test). Frontend created and deleted 'TestLeo' enclosure. Posted 8 real readings against admin's first enclosure (Cora/Confused Spider) — these will persist in sensor_readings for ~10 min and may flip that enclosure's badge to LIVE NODE briefly. No cleanup endpoint exists.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 2: 22/23 backend, 100% frontend after Login.jsx import fix. Outstanding bug: GET /api/payments/status returns 500 instead of graceful 4xx when Stripe session lookup fails — important because /checkout/success page polls this endpoint. New testids verified: google-signin-btn, add-enclosure-btn, add-enclosure-modal, species-{ball-python|crested-gecko|corn-snake|leopard-gecko|bearded-dragon}, add-encl-animal/name/type/submit, node-token-card/input/copy, delete-enclosure-btn, checkout-success-page, pricing-cta-{beta|ball-python|multi-species}. Note that is_visible() returns false for some species buttons even though click() works — likely a virtualized/scroll behavior, not a real bug. ESPHome ingest tested end-to-end: post 7 readings -> /enclosures latest.source flips to 'node' and /readings source=='node' (≥6 readings within window required).",
+  "rca_of_the_issue": "Two root causes found this iteration:\n1) Login.jsx — developer added <GoogleSignIn /> JSX usage but forgot the corresponding import statement, causing 'GoogleSignIn is not defined' ReferenceError that the error boundary swallowed, blanking the whole /login page. Verified by comparing to Signup.jsx which had the import. Applied minimal fix (1-line import) and re-verified Google button renders and login still works. Reproduction: navigate to /login on a fresh deploy — blank black page.\n2) /api/payments/status — the StripeCheckout.get_checkout_status() raises CheckoutError when the upstream Stripe API returns 'No such checkout.session' (test-mode key + session id not yet propagated, or session expired). The handler does not catch this, so FastAPI returns a generic 500. Mitigation: wrap the call in try/except CheckoutError and either return the locally-cached pending tx, or raise HTTPException(status_code=404). Reproduction: POST /api/payments/checkout, then within seconds GET /api/payments/status/{session_id} with a Stripe key that doesn't recognize the session."
+}

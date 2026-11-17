@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg: #05080A;
+    --bg-2: #0A1014;
+    --surface: rgba(10, 16, 20, 0.6);
+    --primary: #00FF66;
+    --primary-hover: #33FF85;
+    --secondary: #B026FF;
+    --accent: #00E5FF;
+    --text: #FFFFFF;
+    --muted: #8A9A9D;
+    --line: rgba(255, 255, 255, 0.06);
+    --line-bright: rgba(0, 255, 102, 0.25);
+}
+
+html, body, #root {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(176, 38, 255, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 0% 10%, rgba(0, 255, 102, 0.08), transparent 60%),
+        var(--bg);
+}
+
+.font-display {
+    font-family: "Unbounded", system-ui, sans-serif;
+    letter-spacing: -0.04em;
+}
+.font-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Selection */
+::selection {
+    background: var(--primary);
+    color: #021004;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,255,102,0.15); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,255,102,0.35); }
+
+/* Shadcn token mapping (dark) */
+@layer base {
+    :root {
+        --background: 200 33% 3%;
+        --foreground: 0 0% 100%;
+        --card: 200 22% 6%;
+        --card-foreground: 0 0% 100%;
+        --popover: 200 22% 6%;
+        --popover-foreground: 0 0% 100%;
+        --primary: 138 100% 50%;
+        --primary-foreground: 200 33% 3%;
+        --secondary: 280 100% 58%;
+        --secondary-foreground: 0 0% 100%;
+        --muted: 200 12% 12%;
+        --muted-foreground: 190 8% 58%;
+        --accent: 186 100% 50%;
+        --accent-foreground: 200 33% 3%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 200 14% 14%;
+        --input: 200 14% 14%;
+        --ring: 138 100% 50%;
+        --radius: 0.25rem;
+    }
+}
+
+@layer base {
+    * { @apply border-border; }
+    body { @apply bg-background text-foreground; }
+}
+
+/* Animations */
+@keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 255, 102, 0); }
+    50% { box-shadow: 0 0 24px rgba(0, 255, 102, 0.35); }
+}
+.glow-pulse { animation: glow-pulse 2.6s ease-in-out infinite; }
+
+@keyframes scan-line {
+    0% { transform: translateY(-100%); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(100%); opacity: 0; }
+}
+.scan-line::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    animation: scan-line 4s linear infinite;
+}
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.7s ease-out both; }
+
+.glass {
+    background: rgba(10, 16, 20, 0.55);
+    backdrop-filter: blur(24px) saturate(120%);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.neon-border {
+    border: 1px solid rgba(0, 255, 102, 0.25);
+    box-shadow: 0 0 0 1px rgba(0, 255, 102, 0.1) inset, 0 0 24px rgba(0, 255, 102, 0.08);
+}
+
+.grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
+    mix-blend-mode: overlay;
+}
+
+/* Recharts neon glow filter (referenced by SensorChart) */
+.recharts-line-curve { filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.35)); }

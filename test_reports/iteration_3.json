@@ -1,0 +1,47 @@
+{
+  "summary": "Iteration 3 RAG layer testing. Backend: 16/16 pytest passing (100%) covering /api/care-guides auth+filter+admin-only POST upsert, /api/chat citations + species_hint detection from enclosure_id AND from query text, cross-species safety fallback, persistence with citations on chat_messages, plus regression on payments status (no 500 — iter-2 fix confirmed), Google OAuth invalid-session 401, waitlist, enclosures. Frontend: AIAdvisor on Dashboard sidebar AND Enclosure detail both show 'V1.5 · Claude Sonnet 4.5 · RAG' header; empty-state mentions 'vetted care guides' + 'citations'; 4 starter prompts; after sending a ball-python shedding query the assistant bubble renders '// sources' with 3 numbered citations including topic, source, and [Ball Python] species tag; starter prompts also produce citations. One minor RAG edge case found (see frontend_issues).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/chat (RAG retrieval)", "issue": "When species_hint is set but the species-filtered $text search returns <k results, _retrieve_care_context tops up with non-species-filtered chunks. Reproduced on Ball Python enclosure detail page: query 'How is the husbandry looking right now?' returned 1 citation tagged [Leopard Gecko] for the UVB chunk. The reply text was still Ball-Python-correct, but the citation species conflicts with species_hint. Fix options: (a) restrict the fallback to species='ANY' only when species_hint is set, or (b) drop fallback citations whose species mismatches species_hint."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Enclosure-detail AIAdvisor", "issue": "Same RAG fallback issue surfaces visibly: citation chip can show a non-matching species tag (e.g. [Leopard Gecko]) while the enclosure is Ball Python. Confusing UX even though reply text is correct.", "affected_selectors": ["[data-testid^='ai-citations-']"]}
+    ],
+    "design_issues": [
+      {"screen": "Dashboard charts (carry-over from iter-2)", "issues": ["recharts width(-1)/height(-1) console warning still emitted — non-blocker per main-agent instruction."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_backend_v3.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Minor) Tighten RAG fallback: when species_hint is set, fallback retrieval should be limited to species='ANY' (not unfiltered global) so cross-species citations don't leak into species-specific contexts.",
+    "(Optional) Surface species_hint chip in the UI so users see the detected species at a glance.",
+    "(Carry-over) Add minHeight to recharts ResponsiveContainer to silence width(-1) warning."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 1151 lines — further exceeds 700-line guideline since iter-2 (was 1024). Strong candidate to split into routers/ + services/ as previously recommended.",
+    "CareGuideIn.text min_length=20 is reasonable but worth documenting; otherwise admins get a 422 with non-obvious copy.",
+    "_retrieve_care_context fallback logic: when species_hint is set, _run(None) is called WITHOUT any species clause. This is the root cause of the cross-species citation leak. Suggest: extra = await _run({'species': 'ANY'}) instead of _run(None).",
+    "Good: care_guides indexes (text + (species,topic) unique compound) created at startup; seed is idempotent via upsert.",
+    "Good: citations payload shape is minimal & stable {species, topic, source}; species_hint exposed for frontend; chat_messages persists citations + species_hint for future history rendering.",
+    "Frontend AIAdvisor.jsx is clean — citations render with index, species tag (omitted when 'ANY' per spec), topic, and source. data-testid='ai-citations-{index}' present as documented.",
+    "POST /api/care-guides returns generic {ok:true} — consider returning the upserted doc so admins can verify what was written without a follow-up GET.",
+    "No 500s observed anywhere in this iteration."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_backend_v3.py (new — 16 pytest cases, all passing)"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% of RAG flows verified (dashboard + enclosure detail); 1 RAG-design edge case noted"},
+  "test_credentials": "Verified admin admin@example.com / <ADMIN_PASSWORD>. Fresh /api/auth/register for non-admin RBAC tests.",
+  "seed_data_creation": "Inserted 1 TEST_admin_upsert_<hex> care-guide entry under species 'Ball Python' (idempotent — main agent can leave as-is or remove). Created several admin chat_messages in fresh sessions (test-rag-<hex>). No new enclosures created this iteration.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 3: RAG layer fully working. New test file /app/backend/tests/test_backend_v3.py supersedes v2 (still keep v2 for full regression). Care-guides endpoint contract: GET requires auth (401 without), GET ?species=X returns species + ANY chunks only, POST is admin-only (403 for fresh user), POST validates text>=20 chars via Pydantic (422 if shorter). /api/chat now returns {session_id, reply, citations: [{species, topic, source}], species_hint: 'Ball Python'|'Crested Gecko'|...|null}. Species hint detection works from (1) enclosure_id lookup, (2) substring scan of the message text. Known minor: when species-filtered text-search returns <3 results, fallback leaks other species into citations — log a follow-up issue but app is functional. Stripe payment-status 500 from iter-2 is fixed and verified. Frontend test ids: ai-advisor-panel, ai-starter-{slug}, ai-input, ai-send, ai-citations-{index}. Login testids: login-email, login-password.",
+  "rca_of_the_issue": "RAG cross-species citation leak: _retrieve_care_context() in /app/backend/server.py:758-773 calls _run(None) as the top-up branch with no species filter. When the user's query produces 0 hits under the species_hint filter (because MongoDB $text search needs at least one term overlap with the indexed care-guide text), the unfiltered fallback can surface entirely different species. Reproduction: open Ball Python enclosure detail, send 'How is the husbandry looking right now?' — citations show [Leopard Gecko] for the UVB chunk. Mitigation: change `extra = await _run(None)` to `extra = await _run({'species': 'ANY'})` so cross-species fallback only pulls ANY-tagged chunks (safety, vet, soil rehydration), or filter the merged citations against species_hint before returning. Not user-blocking — replies remain correct, only the citation tag is misleading."
+}

@@ -1,0 +1,89 @@
+{
+  "theme": "dark",
+  "archetype": "7 (Electric & Neon) combined with Bio-Organic textures",
+  "design_philosophy": "Fusion of sterile high-tech biotech labs and deep organic jungle scales. Emotional tone is commanding, reassuring, and extremely advanced. Brings 'Exotic OS powered by Albedo' to life.",
+  "colors": {
+    "background_primary": "#05080A",
+    "background_secondary": "#0A1014",
+    "surface": "rgba(10, 16, 20, 0.6)",
+    "primary": "#00FF66",
+    "primary_hover": "#33FF85",
+    "secondary": "#B026FF",
+    "accent": "#00E5FF",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#8A9A9D",
+    "border": "rgba(0, 255, 102, 0.2)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Unbounded",
+      "weights": ["400", "700", "900"],
+      "usage": "Use tight letter spacing (tracking-tighter) for massive scale. NEVER use Inter or Space Grotesk."
+    },
+    "body": {
+      "font_family": "IBM Plex Sans",
+      "weights": ["400", "500"],
+      "usage": "Clear, readable text for paragraphs and interface labels."
+    },
+    "mono": {
+      "font_family": "JetBrains Mono",
+      "weights": ["400"],
+      "usage": "For data points, dashboard metrics, and code-like elements"
+    }
+  },
+  "spacing_and_layout": {
+    "marketing": "Asymmetric Bento Grid (TETRIS mode) with gap-8 to gap-12. Generous p-12 to p-24 padding.",
+    "dashboard": "Control Room Grid (Dense) with gap-4 or gap-6. Strict hierarchy, heavy utilization of vertical space. Sharp edges."
+  },
+  "surface_styles": {
+    "marketing_cards": "Glassmorphism with heavy blur (backdrop-blur-xl), dark background (bg-black/40), and an electric 1px inner border (border-white/10) that highlights with primary color on hover.",
+    "dashboard_widgets": "Flat dark backgrounds with sharp 1px border-white/5. On hover, slight lift and border transition to neon green or cyan.",
+    "tracing_beam": "Use a subtle glowing border effect for primary CTA buttons or premium feature cards."
+  },
+  "components_strategy": {
+    "marketing": "Custom HTML/Tailwind for Hero and feature bento grids. Do not use standard Shadcn cards. Build overlapping UI elements.",
+    "dashboard": "Shadcn UI heavily customized. Charts using Recharts (Neon strokes, transparent backgrounds, no gridlines).",
+    "navigation": "Sticky Crystal Glass header (z-50, backdrop-blur-2xl, bg-[#05080A]/70) with hard neon bottom border."
+  },
+  "animations": {
+    "hover": "Transition border colors to neon glowing states. Example: hover:border-[#00FF66] hover:shadow-[0_0_15px_rgba(0,255,102,0.3)]",
+    "page": "Smooth entry fades and subtle parallax scrolling for organic textures."
+  },
+  "media": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1633428620790-99dc3ca163e4",
+      "description": "Close up of purple and green snake skin. Use as a textural background bleeding through a dark gradient for the hero section."
+    },
+    "dashboard_texture": {
+      "url": "https://images.unsplash.com/photo-1711025372958-db48a4fe0ba1",
+      "description": "Abstract black and green tech lines. Use at low opacity (10%) behind the dashboard panels."
+    },
+    "testimonials": [
+      {
+        "url": "https://images.unsplash.com/photo-1760800185627-12eb152aaca4",
+        "description": "Person portrait dark background neon light (Red/Blue)"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1762552280895-4ab391ab3968",
+        "description": "Woman portrait dark background neon light (Blue/Orange)"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1773155593656-952e027bd751",
+        "description": "Woman portrait dark background neon light (Red)"
+      }
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure text over gradients has a text-shadow. Use #05080A tinted grey for backgrounds. Active elements must be highly visible.",
+    "testing": "All interactive elements MUST have data-testid attributes (e.g., data-testid='hero-cta-button', data-testid='nav-login')."
+  },
+  "instructions_to_main_agent": [
+    "Install fonts via Google Fonts: Unbounded, IBM Plex Sans, JetBrains Mono.",
+    "Install lucide-react for iconography.",
+    "Marketing UI must not feel like a generic template. Use overlapping images, tight tracking on large headers (Unbounded text-5xl/6xl). Never use Inter for headings.",
+    "Dashboard UI must feel like a bio-tech control room. Dense, informative, with neon highlights strictly for data emphasis and active states.",
+    "Implement Recharts for temperature/humidity data. Customize chart strokes to glow using drop-shadow SVG filters.",
+    "Use pure HTML+Tailwind for the landing page layout; reserve customized Shadcn components for the App Dashboard.",
+    "Always apply 'data-testid' to CTA buttons, nav links, and dashboard interactive controls."
+  ]
+}
